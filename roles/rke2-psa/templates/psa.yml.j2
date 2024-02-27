@@ -1,0 +1,26 @@
+apiVersion: apiserver.config.k8s.io/v1
+kind: AdmissionConfiguration
+plugins:
+  - configuration:
+      apiVersion: pod-security.admission.config.k8s.io/v1
+      kind: PodSecurityConfiguration
+      defaults: 
+        enforce: "{{ psa.defaults.enforce }}"
+        enforce-version: "{{ psa.defaults['enforce-version'] }}"
+        audit: "{{ psa.defaults.audit }}"
+        audit-version: "{{ psa.defaults['audit-version'] }}"
+        warn: "{{ psa.defaults.warn }}"
+        warn-version: "{{ psa.defaults['warn-version'] }}"
+      exemptions:
+        usernames: 
+          {% for username in psa.exemptions.usernames %}
+          - "{{ username }}"
+          {% endfor %}
+        runtimeClasses: 
+          {% for runtime_class in psa.exemptions.runtimeClasses %}
+          - "{{ runtime_class }}"
+          {% endfor %}
+        namespaces: 
+          {% for namespace in psa.exemptions.namespaces %}
+          - "{{ namespace }}"
+          {% endfor %}

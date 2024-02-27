@@ -1,0 +1,7 @@
+# RKE2 Kubernetes Engine Deployment Config (deployed with lablab.rke2)
+rke2_helm_values:
+  rke2_version: v1.26.9+rke2r1
+  rke2_ha_mode: true
+  rke2_api_ip : 192.168.122.100
+  rke2_ha_mode_keepalived: false
+  rke2_ha_mode_kubevip: true

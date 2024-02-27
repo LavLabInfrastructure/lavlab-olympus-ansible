@@ -1,0 +1,22 @@
+- name: Merge custom configs
+  set_fact:
+    nvidia: "{{ nvidia | combine(config | default({}), recursive=True) }}"
+
+- name: Install nvidia-gpu-operator
+  include_tasks: install.yml
+  when:
+    - cmd == "install"
+    - inventory_hostname in groups[rke2_servers_group_name]
+
+- name: Add nvidia-gpu-operator PSA Exemption
+  set_fact:
+    psa:
+      defaults: "{{ psa.defaults }}"
+      exemptions:
+        usernames: "{{ psa.exemptions.usernames }}"
+        runtimeClasses: "{{ psa.exemptions.runtimeClasses}}"
+        namespaces: "{{ psa.exemptions.namespaces + [nvidia.namespace] }}"
+  when: 
+    - psa is defined
+    - cmd == "psa"
+    - inventory_hostname in groups[rke2_servers_group_name]

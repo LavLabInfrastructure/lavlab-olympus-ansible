@@ -1,0 +1,87 @@
+- name: Merge custom configs
+  set_fact:
+    cnpg_cluster: "{{ cnpg_cluster | combine(config | default({}), recursive=True) }}"
+
+- name: Create PostgreSQL superuser secret
+  run_once: true
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ cnpg_cluster.name }}-cnpg-superuser-secret"
+        namespace: "{{ cnpg_cluster.namespace }}"
+      type: kubernetes.io/basic-auth
+      stringData:
+        username: "postgres"
+        password: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}" 
+
+- set_fact:
+    pg_pass: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+
+- name: Create PostgreSQL user secret
+  run_once: true
+  k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ cnpg_cluster.name }}-cnpg-user-secret"
+        namespace: "{{ cnpg_cluster.namespace }}"
+      type: kubernetes.io/basic-auth
+      stringData:
+        username: "{{ cnpg_cluster.name }}-pg-user"
+        password: "{{ pg_pass }}"
+
+- name: Merge CRD with custom configs
+  run_once: true
+  set_fact:
+    crd: "{{ cnpg_cluster.spec | combine((lookup('template', 'cluster.yml.j2') | from_yaml), recursive=True) }}"
+    
+- name: Add HA PostgreSQL cluster definition
+  run_once: true
+  k8s:
+    apply: yes
+    wait: yes
+    state: present
+    namespace: "{{ cnpg_cluster.namespace }}"
+    definition: 
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: "{{ cnpg_cluster.cluster_name }}"
+      spec: "{{ crd }}"
+
+- name: Create PG Connection Secret from Template
+  become: yes
+  run_once: true
+  template:
+    src: connection_secret.yml.j2
+    dest: /tmp/connection_secret.yml
+    mode: 0644
+
+- name: Merge Connection Details
+  run_once: true
+  set_fact:
+    connection: "{{ cnpg_cluster.connection_secret | combine((lookup('template','connection_secret.yml.j2') | from_yaml), recursive=True) }}"
+
+- name: Create PG connection secret
+  run_once: true
+  k8s:
+    apply: yes
+    wait: yes
+    state: present
+    namespace: "{{ cnpg_cluster.namespace }}"
+    definition: 
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ cnpg_cluster.name }}-postgres-configuration"
+        namespace: "{{ cnpg_cluster.namespace }}"
+      stringData: "{{ connection }}"
+      type: Opaque
+
+
+

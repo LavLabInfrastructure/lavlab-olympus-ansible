@@ -1,0 +1,60 @@
+ranch:
+  children:
+    vmcluster1:
+      vars:
+        rke2_cluster_group_name: "vmcluster1"
+        rke2_servers_group_name: "vmcluster1_servers"
+        rke2_agents_group_name: "vmcluster1_agents"
+        rke2_cis_profile: "cis"
+        rke2_ha_mode: false
+        rke2_api_ip : 192.168.122.101
+        rke2_ha_mode_keepalived: false
+        rke2_ha_mode_kubevip: false
+      children:
+        vmcluster1_servers:
+          hosts:
+            vm1:
+              ansible_host: 192.168.122.101 
+              rke2_type: server
+        vmcluster1_agents:
+          hosts:
+            vm2:
+              ansible_host: 192.168.122.102
+              rke2_type: agent
+    vmcluster2:
+      vars:
+        rke2_cluster_group_name: "vmcluster2"
+        rke2_servers_group_name: "vmcluster2_servers"
+        rke2_agents_group_name: "vmcluster2_agents"
+        rke2_cis_profile: "cis"
+        rke2_ha_mode: false
+        rke2_api_ip : 192.168.122.103
+        rke2_ha_mode_keepalived: false
+        rke2_ha_mode_kubevip: false
+      children:
+        vmcluster2_servers:
+          hosts:
+            vm3:
+              ansible_host: 192.168.122.103
+              rke2_type: server
+    # vmcluster2: 
+    #   vars:
+    #     rke2_cluster_group_name: "vmcluster2"
+    #     rke2_servers_group_name: "{{ rke2_cluster_group_name }}_servers"
+    #     rke2_agents_group_name: "{{ rke2_cluster_group_name }}_agents"
+    #     rke2_ha_mode: true
+    #     rke2_api_ip : 192.168.122.110
+    #     rke2_ha_mode_keepalived: false
+    #     rke2_ha_mode_kubevip: true
+    #   children:
+    #     vmcluster2_servers:
+    #       hosts:
+    #         vm4:
+    #           ansible_host: 192.168.122.104
+    #           rke2_type: server
+    #         vm5:
+    #           ansible_host: 192.168.122.105
+    #           rke2_type: server
+    #         vm6:
+    #           ansible_host: 192.168.122.106
+    #           rke2_type: server

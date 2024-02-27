@@ -1,0 +1,11 @@
+
+- name: Merge custom configs
+  run_once: yes
+  set_fact:
+    helm: "{{ helm | combine(config | default({}), recursive=True) }}"
+
+- name: Install Helm
+  include_tasks: install.yml
+  when:
+    - cmd == "install"
+    - inventory_hostname in groups[rke2_servers_group_name]

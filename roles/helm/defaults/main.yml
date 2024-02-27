@@ -1,0 +1,6 @@
+cmd: "install"
+helm:
+  version: '3.14.0'
+  helm_diff:
+    enabled: true
+    version: '3.9.4'

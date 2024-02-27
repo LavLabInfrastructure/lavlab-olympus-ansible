@@ -1,0 +1,15 @@
+{% if rancher.hostname %}
+hostname: {{ rancher.hostname }}
+{% endif %}
+{% if rancher.bootstrapPassword %}
+bootstrapPassword: {{ rancher.bootstrapPassword }}
+{% endif %}
+global:
+    cattle:
+        psp:
+            enabled: {{ rke2_version.split('+')[0] is version('v1.25.0', 'lt') }}
+{% if rancher.external_cert.enabled %}
+ingress:
+    tls:
+        source: secret 
+{% endif %}

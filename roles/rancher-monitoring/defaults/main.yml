@@ -1,0 +1,10 @@
+cmd: "install"
+monitoring:
+  grafana:
+    auth_mode: "default"
+  namespace: "cattle-monitoring-system"
+  version: "103.0.3+up45.31.1"
+  helm_values: {}
+  crd:
+    version: "103.0.3+up45.31.1"
+    helm_values: {}

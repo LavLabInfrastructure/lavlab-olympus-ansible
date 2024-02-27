@@ -1,0 +1,35 @@
+- name: Login to Rancher
+  include_tasks: login.yml
+  when: 
+    - inventory_hostname in groups[rke2_servers_group_name]
+
+- name: Get Existing Clusters
+  command: 'rancher clusters ls --format {{ "{{.Cluster.Name}}" }}'
+  changed_when: false
+  when: 
+    - inventory_hostname == groups[rancher.cluster].0
+  register: existing_clusters
+
+- name: Gather rancher child cluster management server groups
+  set_fact:
+    ranch_children: "{{ ranch_children|default([]) | union([hostvars[item].rke2_cluster_group_name]) }}"
+  loop: "{{ groups.ranch }}"
+  when: 
+    - inventory_hostname == groups[rancher.cluster].0
+
+- name: Get List of Missing Clusters
+  set_fact:
+    clusters_to_add: "{{ ranch_children | map('replace', rancher.cluster, 'local') | difference(existing_clusters.stdout_lines) | default([]) }}"
+  when: 
+    - inventory_hostname == groups[rancher.cluster].0
+
+- name: Join each cluster to the ranch
+  loop: "{{ clusters_to_add }}"  
+  include_tasks: join-ranch.yml
+  loop_control:
+    loop_var: cluster_name
+  when: 
+    - inventory_hostname == groups[rancher.cluster].0
+
+- name: Get Rancher IDs
+  include_tasks: get_ids.yml

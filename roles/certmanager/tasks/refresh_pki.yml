@@ -1,0 +1,157 @@
+
+- name: Create Primary PKI Issuer 
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Issuer
+      metadata:
+        name: pki-selfsigned-issuer
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        selfSigned: {} 
+  when:
+    - inventory_hostname == groups[ranch.rancher.cluster].0
+
+- name: Create Root CA
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: pki-root-ca-certificate
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        secretName: pki-root-ca-certificate-secret  
+        issuerRef:
+          name: pki-selfsigned-issuer
+          kind: Issuer
+        commonName: "{{ ranch_domain }}"
+        isCA: true
+        duration: 2160h  # 90d
+        renewBefore: 360h  # 15d
+        privateKey:
+          algorithm: RSA
+          encoding: PKCS1
+          size: 2048
+  when:
+    - inventory_hostname == groups[ranch.rancher.cluster].0
+
+- name: Create Root CA Issuer
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Issuer
+      metadata:
+        name: pki-root-ca-issuer
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        ca:
+          secretName: pki-root-ca-certificate-secret
+  when:
+    - inventory_hostname == groups[ranch.rancher.cluster].0
+
+- name: Create Intermediate CAs
+  delegate_to: "{{ groups[ranch.rancher.cluster].0 }}"
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: pki-intermediate-ca-certificate
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        secretName: pki-intermediate-ca-certificate-secret  
+        issuerRef:
+          name: pki-root-ca-issuer
+          kind: Issuer
+        commonName: "{{ rke2_cluster_group_name }}.{{ ranch_domain }}"
+        isCA: true
+        duration: 2160h  # 90d
+        renewBefore: 360h  # 15d
+        privateKey:
+          algorithm: RSA
+          encoding: PKCS1
+          size: 2048
+  when:
+    - inventory_hostname == groups[rke2_servers_group_name].0
+    - inventory_hostname not in groups[ranch.rancher.cluster]
+
+- name: Get CA secret
+  delegate_to: "{{ groups[ranch.rancher.cluster].0 }}"
+  k8s_info:
+    kind: Secret
+    api_version: v1
+    namespace: "{{ certmanager.namespace }}"
+    name: pki-intermediate-ca-certificate-secret
+  register: ca_secret
+  when:
+    - inventory_hostname == groups[rke2_servers_group_name].0
+    - inventory_hostname not in groups[ranch.rancher.cluster]
+
+- name: Prepare CA Secret definition without resourceVersion
+  set_fact:
+    ca_secret: "{{ ca_secret.resources.0 | combine({'metadata': {'resourceVersion': omit, 'uid': omit}}, recursive=True) }}"
+  when:
+    - inventory_hostname == groups[rke2_servers_group_name].0
+    - inventory_hostname not in groups[ranch.rancher.cluster]
+
+- name: Apply CA Secret to Cluster
+  k8s:
+    state: present
+    definition: "{{ ca_secret }}"
+  when:
+    - inventory_hostname == groups[rke2_servers_group_name].0
+    - inventory_hostname not in groups[ranch.rancher.cluster]
+
+- name: Create Intermediate Issuers
+  k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Issuer
+      metadata:
+        name: pki-intermediate-ca-issuer
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        ca:
+          secretName: pki-intermediate-ca-certificate-secret
+  when:
+    - inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Create Certificates for Nodes
+  k8s:
+    state: present
+    definition: 
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: "pki-{{ inventory_hostname }}-node-certificate"
+        namespace: "{{ certmanager.namespace }}"
+      spec:
+        secretName: "pki-{{ inventory_hostname }}-node-certificate-secret"
+        issuerRef:
+          name: pki-intermediate-ca-issuer
+          kind: Issuer
+        commonName: "{{ inventory_hostname }}.{{ rke2_cluster_group_name }}.{{ ranch_domain }}"
+        duration: 2160h  # 90d
+        renewBefore: 360h  # 15d
+        privateKey:
+          algorithm: RSA
+          encoding: PKCS1
+          size: 2048
+
+- name: Register Certificates 
+  shell: >
+    /var/lib/rancher/rke2/bin/kubectl get secret pki-{{ inventory_hostname }}-node-certificate-secret 
+    -n {{ certmanager.namespace }} 
+    -o jsonpath='{.data.tls\.crt}' 
+    | base64 --decode 
+  register: node_cert
+
+- name: Distribute Certificates
+  become: yes
+  shell: "echo '{{ node_cert.stdout }}' > /etc/rancher/node/pki-node-certificate.crt"

@@ -1,0 +1,33 @@
+
+- name: Generate Helm Chart Values From Template
+  become: yes
+  template:
+    src: values.yml.j2
+    dest: /tmp/cnpg_values.yml
+    mode: 0644
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Add CloudNative-PostgreSQL helm repo
+  kubernetes.core.helm_repository:
+    name: cnpg
+    repo_url: "https://cloudnative-pg.github.io/charts"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Deploy CNPG using Helm
+  kubernetes.core.helm:
+    name: "{{ postgres.name }}"
+    chart_ref: cnpg/cloudnative-pg
+    namespace: "{{ postgres.namespace }}"
+    create_namespace: yes
+    update_repo_cache: True
+    wait: yes
+    values_files:
+      - /tmp/cnpg_values.yml
+    values: "{{ postgres.helm_values }}"
+  register: helm_install_result
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Display Helm install result
+  debug:
+    var: helm_install_result
+  when: inventory_hostname == groups[rke2_servers_group_name].0

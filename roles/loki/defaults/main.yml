@@ -1,0 +1,3 @@
+loki:
+ namespace: "loki-system"
+ version: "2.11.11"

@@ -1,0 +1,58 @@
+- name: Add Rook.io Helm repository
+  kubernetes.core.helm_repository:
+    name: rook-release
+    repo_url: "https://charts.rook.io/release"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Create Helm Values from Template
+  become: yes
+  template:
+    src: "values.yml.j2"
+    dest: "/tmp/rook-ceph-values.yaml"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install Rook Ceph Operator Chart
+  kubernetes.core.helm:
+    name: rook-ceph
+    chart_ref: rook-release/rook-ceph
+    chart_version: "{{ storage.version }}"
+    namespace: "{{ storage.namespace }}"
+    create_namespace: yes
+    update_repo_cache: True
+    wait: yes
+    values_files:
+      - "/tmp/rook-ceph-values.yaml"
+    values: "{{ storage.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+# - name: Create Multus Definition
+#   kubernetes.core.k8s:
+#     state: present
+#     definition:
+#       apiVersion: "k8s.cni.cncf.io/v1"
+#       kind: NetworkAttachmentDefinition
+#       metadata:
+#         name: ceph-multus-net
+#         namespace: rook-ceph
+#       spec:
+#         config: '{
+#             "cniVersion": "0.3.0",
+#             "type": "macvlan",
+#             "master": "eth1",
+#             "mode": "bridge",
+#             "ipam": {
+#               "type": "whereabouts",
+#               "range": "192.168.200.0/24"
+#             }
+#           }'
+
+
+- name: Install Ceph Cluster Chart
+  kubernetes.core.helm:
+    name: rook-ceph-cluster
+    chart_ref: rook-release/rook-ceph-cluster
+    chart_version: "{{ storage.version }}"
+    namespace: "{{ storage.namespace }}"
+    wait: yes
+    values: "{{ storage.cluster_helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0

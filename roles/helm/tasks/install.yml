@@ -1,0 +1,28 @@
+- name: Install Helm on all rke2 control server nodes
+  include_role:
+    name: gantsign.helm
+  vars:
+    helm_version: "{{ helm.version }}"
+    
+- name: Install helm-diff plugin
+  kubernetes.core.helm_plugin:
+    plugin_path: https://github.com/databus23/helm-diff
+    plugin_version: "{{ helm.helm_diff.version }}"
+    state: present
+  when:
+    - helm.helm_diff.enabled
+
+- name: Ensure .kube directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+
+- name: Copy rke2.yaml to .kube/config
+  become: yes
+  ansible.builtin.copy:
+    src: /etc/rancher/rke2/rke2.yaml
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_env.USER }}"
+    group: "{{ ansible_env.USER }}"
+    mode: '0600'

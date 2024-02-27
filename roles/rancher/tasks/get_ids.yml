@@ -1,0 +1,36 @@
+- import_tasks: login.yml
+
+# - command: "rancher nodes | awk -F '[ ]+' '/{{ inventory_hostname }}/{print $1}'"
+#   register: rancher_id_stdout
+
+# - debug:
+#     var: rancher_id_stdout
+
+# - set_fact:
+#     rancher_id: "{{ rancher_id_stdout.stdout }}"
+#     rancher_name: "{{ inventory_hostname }}"
+
+- set_fact:
+    cluster_search_term: "{{ rke2_cluster_group_name }}"
+
+- set_fact:
+    cluster_search_term: "local"
+  when: inventory_hostname in groups[rancher.cluster]
+
+- command: "bash -c \"rancher clusters | awk -F '[ ]+' '/{{ cluster_search_term }}/{print $(NF-8)}'\""
+  register: rancher_cluster_id_stdout
+
+- debug:
+    var: rancher_cluster_id_stdout
+
+- set_fact:
+    rancher_cluster_id: "{{ rancher_cluster_id_stdout.stdout }}"
+
+- command: "bash -c \"rancher clusters | awk -F '[ ]+' '/{{ cluster_search_term }}/{print $(NF-6)}'\""
+  register: rancher_cluster_name_stdout
+
+- debug:
+    var: rancher_cluster_name_stdout
+
+- set_fact:
+    rancher_cluster_name: "{{ rancher_cluster_name_stdout.stdout }}"

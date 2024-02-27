@@ -1,0 +1,18 @@
+
+- set_fact:
+    skip_verify: "--skip-verify"
+  when: rancher.skip_verify
+- name: Check if we are already logged in
+  block:
+    - name: Execute 'rancher nodes' as a quick test
+      command: rancher nodes 
+  rescue:
+    - name: Obtain a Rancher API token
+      include_role:
+        name: "{{ rancher.token_role }}"
+      when: rancher_api_token is not defined
+
+    - name: Authenticate with Rancher server using the CLI
+      command: 
+        cmd: rancher login "https://{{ rancher.hostname }}" -t "{{ rancher_api_token }}" "{{ skip_verify | default('') }}"
+        stdin: 1

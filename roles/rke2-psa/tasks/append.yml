@@ -1,0 +1,10 @@
+- name: Append PSA Exemptions
+  include_role:
+    name: "{{ role.name }}"
+  vars:
+    config: "{{ role.config.config }}"
+    cmd: "psa"
+  when: 
+    # if cluster/s is not defined it is applied to all clusters, otherwise only apply if this cluster handles this service
+    - role.config.enabled | default(true)
+    - (role.config.cluster is not defined and role.config.clusters is not defined) or rke2_cluster_group_name in role.config.cluster | default([]) or rke2_cluster_group_name in role.config.clusters | default([])

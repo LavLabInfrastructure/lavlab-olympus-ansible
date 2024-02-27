@@ -1,0 +1,7 @@
+cmd: "install"
+ubuntu:
+  apt:
+    - "lvm2"
+    - "python3-pip"
+  pip:
+    - "kubernetes"

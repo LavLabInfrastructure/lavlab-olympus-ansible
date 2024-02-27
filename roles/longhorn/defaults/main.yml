@@ -1,0 +1,7 @@
+longhorn:
+  version: '103.2.1+up1.5.3'
+  namespace: 'longhorn-system'
+  helm_values: {}
+  crd:
+    version: '103.2.1+up1.5.3'
+    helm_values: {}

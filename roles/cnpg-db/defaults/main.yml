@@ -1,0 +1,8 @@
+cnpg_cluster:
+  name: "app"
+  namespace: "app"
+  cluster_name: "app-pg-cluster"
+
+  spec: {}
+  client_permissions: 'rw'
+  connection_secret: {}

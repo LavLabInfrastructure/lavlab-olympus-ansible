@@ -1,0 +1,24 @@
+cmd: ""
+rancher_exemptions:
+  - cattle-system
+  - cattle-fleet-system
+  - cattle-fleet-local-system
+  - cattle-csp-adapter-system
+  - cattle-externalip-system
+  - cattle-gatekeeper-system
+  - cattle-sriov-system
+  - cattle-ui-plugin-system
+  - cattle-provisioning-capi-system
+rancher:
+  version: "2.7.6"
+  cli_version: "v2.7.7"
+  hostname: ""
+  skip_verify: true
+  bootstrapPassword: "admin"
+  token_role: "rancher-token-user-pass-prompt"
+  external_cert: 
+    enabled: false
+    ca: ""
+    cert: ""
+    key: ""  
+  helm_values: {}

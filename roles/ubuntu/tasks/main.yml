@@ -1,0 +1,8 @@
+- name: Merge custom configs
+  set_fact:
+    ubuntu: "{{ ubuntu | combine(config | default({}), recursive=True) }}"
+
+- name: Install Packages
+  include_tasks: install.yml
+  when:
+    - cmd == "install"

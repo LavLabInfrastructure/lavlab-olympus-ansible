@@ -1,0 +1,81 @@
+
+- name: Fetch the existing CA secret
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: cattle-system
+    name: tls-ca
+  register: existing_ca_secret
+  ignore_errors: yes
+
+- name: Determine if CA content has changed
+  set_fact:
+    ca_content_changed: true
+  when: >
+    existing_ca_secret.resources[0].stringData['cacerts.pem'] != lookup('file', rancher.external_cert.ca)
+  ignore_errors: yes
+
+- name: Create Generic Secret for Private CA if Content Differs
+  k8s:
+    api_version: v1
+    kind: Secret
+    namespace: cattle-system
+    name: tls-ca
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: tls-ca
+        namespace: cattle-system
+      stringData:
+        cacerts.pem: "{{ lookup('file', rancher.external_cert.ca) }}"
+  when: 
+    - rancher.external_cert.enabled
+    - rancher.external_cert.ca != ""
+    - inventory_hostname == groups[rancher.cluster].0
+    - ca_content_changed | default(true)
+
+- name: Fetch the existing TLS secret
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: cattle-system
+    name: tls-rancher-ingress
+  register: existing_secret
+  ignore_errors: yes
+
+- name: Determine if content has changed
+  set_fact:
+    content_changed: true
+  when: >
+    existing_secret.resources[0].data['tls.crt'] != (lookup('file', rancher.external_cert.cert) | b64encode) or
+    existing_secret.resources[0].data['tls.key'] != (lookup('file', rancher.external_cert.key) | b64encode)
+  ignore_errors: yes
+
+- name: Use External Cert When Enabled and Content Differs
+  k8s:
+    api_version: v1
+    kind: Secret
+    namespace: cattle-system
+    name: tls-rancher-ingress
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: tls-rancher-ingress
+        namespace: cattle-system
+      type: kubernetes.io/tls
+      data:
+        tls.crt: "{{ lookup('file', rancher.external_cert.cert) | b64encode }}"
+        tls.key: "{{ lookup('file', rancher.external_cert.key) | b64encode }}"
+  when: 
+    - rancher.external_cert.enabled
+    - inventory_hostname == groups[rancher.cluster].0
+    - content_changed | default(true)
+
+- name: Restart Rancher Deployment
+  shell: /bin/bash -c "/var/lib/rancher/rke2/bin/kubectl -n cattle-system rollout restart deployment rancher"
+  when: 
+    - rancher.external_cert.enabled
+    - content_changed | default(false) or ca_content_changed | default(false)
+    - inventory_hostname == groups[rancher.cluster].0

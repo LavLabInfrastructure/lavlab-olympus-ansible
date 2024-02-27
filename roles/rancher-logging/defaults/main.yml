@@ -1,0 +1,7 @@
+logging:
+  namespace: "cattle-logging-system"
+  version: "103.0.0+up3.17.10"
+  helm_values: {}
+  crd:
+    version: "103.0.0+up3.17.10"
+    helm_values: {}

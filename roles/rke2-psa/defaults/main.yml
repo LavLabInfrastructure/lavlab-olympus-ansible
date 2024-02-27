@@ -1,0 +1,19 @@
+psa:
+  defaults:
+    enforce: "restricted"
+    enforce-version: "latest"
+    audit: "restricted"
+    audit-version: "latest"
+    warn: "restricted"
+    warn-version: "latest"
+  exemptions:
+    usernames: []
+    runtimeClasses: []
+    namespaces: 
+      - calico-apiserver
+      - calico-system
+      - ingress-nginx
+      - kube-node-lease
+      - kube-public
+      - kube-system
+      - tigera-operator

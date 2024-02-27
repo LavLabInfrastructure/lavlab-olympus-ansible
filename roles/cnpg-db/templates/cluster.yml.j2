@@ -1,0 +1,14 @@
+instances: 3
+
+superuserSecret:
+  name: "{{ cnpg_cluster.name }}-cnpg-superuser-secret"
+
+bootstrap:
+  initdb:
+    database: "{{ cnpg_cluster.name }}"
+    owner: "{{ cnpg_cluster.name }}-pg-user"
+    secret:
+      name: "{{ cnpg_cluster.name }}-cnpg-user-secret"
+imageName: ghcr.io/cloudnative-pg/postgresql:13
+storage: 
+  size: "2Gi" 

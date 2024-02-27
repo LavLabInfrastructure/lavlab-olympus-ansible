@@ -1,0 +1,159 @@
+- name: Merge Configs
+  hosts: all
+  tasks:
+    - set_fact:
+        ranch: "{{ ranch | combine(config | default({}), recursive=True) }}"
+    - debug:
+        var: ranch
+
+# - name: Install OS Packages 
+#   hosts: all
+#   become: yes
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.packages.role }}"
+#       vars: 
+#         config: "{{ ranch.providers.packages.config }}"
+
+# - name: Compile RKE2 Pod Security Admissions
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: rke2-psa
+#       when: 
+#         - inventory_hostname in groups[rke2_servers_group_name]
+#         - rke2_cis_profile != "none"
+
+# - name: Multus Modifications
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.multus.role }}"
+#       vars: 
+#         cmd: "install"
+#       when: ranch.providers.multus.enabled
+
+# - name: Cilium Modifications
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.cilium.role }}"
+#       vars: 
+#         cmd: "install"
+#       when: ranch.providers.cilium.enabled
+
+# - name: Deploy RKE2
+#   hosts: all
+#   become: yes
+#   roles:
+#     - role: lablabs.rke2
+  
+# - name: Install Helm
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.helm.role }}"
+#       vars: 
+#         config: "{{ ranch.providers.helm.config }}"
+
+# - name: Install PKI Provider
+#   hosts: all
+#   tasks:
+#     - include_role:
+#         name: "{{ ranch.providers.pki.role }}"
+#       vars:
+#         cmd: "install"
+#         config: "{{ ranch.providers.pki.config }}"
+#       when: ranch.providers.pki.enabled == true or ranch.rancher.external_cert.enabled == false
+
+- name: Install Rancher
+  hosts: all
+  tasks:
+    - include_role: 
+        name: rancher
+      vars: 
+        cmd: "ids"
+        # cmd: "install"
+        config: "{{ ranch.rancher }}"
+
+- name: Install Monitor Provider
+  hosts: all
+  tasks:
+    - include_role: 
+        name: "{{ ranch.providers.monitoring.role }}"
+      vars: 
+        cmd: "install"
+        config: "{{ ranch.providers.monitoring.config }}"
+      when: ranch.providers.monitoring.enabled
+
+- name: Install Logging Provider
+  hosts: all
+  tasks:
+    - include_role: 
+        name: "{{ ranch.providers.logging.role }}"
+      vars: 
+        cmd: "install"
+        config: "{{ ranch.providers.logging.config }}"
+      when: ranch.providers.logging.enabled
+
+# - name: Install Storage Provider
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.storage.role }}"
+#       vars: 
+#         cmd: "install"
+#         config: "{{ ranch.providers.storage.config }}"
+
+- name: Install Postgres Provider
+  hosts: all
+  tasks:
+    - include_role: 
+        name: "{{ ranch.providers.postgres.role }}"
+      vars: 
+        cmd: "install"
+        config: "{{ ranch.providers.postgres.config }}"
+      when: ranch.providers.postgres.enabled
+
+- name: Install GPU Operator
+  hosts: all
+  tasks:
+    - include_role: 
+        name: "{{ ranch.providers.gpu.role }}"
+      vars: 
+        cmd: "install"
+        config: "{{ ranch.providers.gpu.config }}"
+      when: ranch.providers.gpu.enabled
+
+# # TODO ADD MULTUS, AND GPU OPERATOR THEN RERUN PLAYBOOK 
+# # TODO THEN SETUP MEDUSA/SIREN TRANSFER
+
+# # - name: Install KURED
+# #   hosts: all
+# #   tasks:
+# #     - include_role: 
+# #         name: "{{ ranch.providers.kured.role }}"
+# #       vars: 
+# #         cmd: "install"
+# #         config: "{{ ranch.providers.kured.config }}"
+
+# - name: Install Identity Provider
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ ranch.providers.idp.role }}"
+#       vars: 
+#         config: "{{ ranch.providers.idp.config }}"
+#       when: ranch.providers.idp.enabled
+
+# - name: Install Services
+#   hosts: all
+#   tasks:
+#     - include_role: 
+#         name: "{{ item.role }}"
+#       vars: 
+#         cmd: "install"
+#         logging_namespace: "{{ logging.namespace }}"
+#         monitoring_namespace: "{{ monitoring.namespace }}"
+#         config: "{{ item.config }}"
+#       loop: "{{ ranch.services }}"

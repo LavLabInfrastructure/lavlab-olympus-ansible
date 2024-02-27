@@ -1,0 +1,11 @@
+- name: Modify RKE2 Cilium
+  become: yes
+  template:
+    src: cilium-values.yml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml
+    mode: 0644
+  when: inventory_hostname in groups[rke2_servers_group_name]
+
+- name: Disable Kube Proxy
+  set_fact:
+    disable_kube_proxy: true

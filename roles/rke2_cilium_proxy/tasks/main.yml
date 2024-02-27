@@ -1,0 +1,5 @@
+- name: Add RKE2 Cilium Modifications 
+  include_tasks: install.yml
+  when:
+    - cmd == "install"
+    - inventory_hostname in groups[rke2_servers_group_name]

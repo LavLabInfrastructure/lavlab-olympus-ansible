@@ -1,0 +1,12 @@
+volumeMounts:
+  - name: /var/lib/kured
+    hostPath:
+      path: /var/lib/kured
+
+configuration:
+  forceReboot: false
+
+{% if ranch.providers.monitoring.enabled %}
+metrics:
+  create: true
+{% endif %}

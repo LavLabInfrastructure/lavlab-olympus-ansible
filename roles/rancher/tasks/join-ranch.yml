@@ -1,0 +1,18 @@
+- name: Create new cluster with Rancher
+  command: "rancher clusters create --import {{ cluster_name }}"
+  run_once: true
+  register: cluster_registration
+
+- name: Wait for cluster to stabilize
+  wait_for:
+    timeout: 10
+  run_once: true
+
+- name: Get Import Command
+  command: "rancher clusters import {{ cluster_name }}"
+  run_once: true
+  register: cluster_registration
+
+- name: Join cluster to Rancher
+  delegate_to: "{{ groups[cluster_name].0 }}"
+  command: "bash -c 'PATH=$PATH:/var/lib/rancher/rke2/bin; {{ cluster_registration.stdout_lines.4 }}'"

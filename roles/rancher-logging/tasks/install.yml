@@ -1,0 +1,38 @@
+
+- name: Generate Helm Chart Values From Template
+  become: yes
+  template:
+    src: values.yml.j2
+    dest: /tmp/logging_values.yml
+    mode: 0644
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Add Rancher-Charts Helm repository
+  kubernetes.core.helm_repository:
+    name: rancher-charts
+    repo_url: "https://charts.rancher.io"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install Rancher Logging CRDs
+  kubernetes.core.helm:
+    name: rancher-logging-crd
+    chart_ref: rancher-charts/rancher-logging-crd
+    chart_version: "{{ logging.crd.version }}"
+    namespace: "{{ logging.namespace }}"
+    create_namespace: yes
+    update_repo_cache: True
+    wait: yes
+    values: "{{ logging.crd.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install the Rancher Logging Helm chart
+  kubernetes.core.helm:
+    name: rancher-logging
+    chart_ref: rancher-charts/rancher-logging
+    chart_version: "{{ logging.version }}"
+    namespace: "{{ logging.namespace }}"
+    wait: yes
+    values_files:
+      - /tmp/logging_values.yml
+    values: "{{ logging.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0

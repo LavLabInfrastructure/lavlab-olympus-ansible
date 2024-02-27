@@ -1,0 +1,38 @@
+
+- name: Generate Helm Chart Values From Template
+  become: yes
+  template:
+    src: values.yml.j2
+    dest: /tmp/longhorn_values.yml
+    mode: 0644
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Add Rancher-Charts Helm repository
+  kubernetes.core.helm_repository:
+    name: rancher-charts
+    repo_url: "https://charts.rancher.io"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install Longhorn CRDs
+  kubernetes.core.helm:
+    name: longhorn-crd
+    chart_ref: rancher-charts/longhorn-crd
+    chart_version: "{{ storage.crd.version }}"
+    namespace: "{{ storage.namespace }}"
+    create_namespace: yes
+    update_repo_cache: True
+    wait: yes
+    values_files:
+      - /tmp/longhorn_values.yml
+    values: "{{ storage.crd.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install the Longhorn Helm chart
+  kubernetes.core.helm:
+    name: longhorn
+    chart_ref: rancher-charts/longhorn
+    chart_version: "{{ storage.version }}"
+    namespace: "{{ storage.namespace }}"
+    wait: yes
+    values: "{{ storage.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0

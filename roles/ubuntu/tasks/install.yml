@@ -1,0 +1,22 @@
+- name: Set permissions and sticky bit on /tmp
+  ansible.builtin.file:
+    path: /tmp
+    mode: "a=rwx,o+t"
+  changed_when: false
+
+- name: Upgrade all packages
+  apt:
+    upgrade: yes
+    update_cache: yes
+
+- name: Install apt packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu.apt }}"
+
+- name: Install pip packages
+  pip:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ubuntu.pip }}"

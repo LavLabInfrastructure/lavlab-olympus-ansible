@@ -1,0 +1,38 @@
+- set_fact: 
+    username: "admin"
+  when: username is not defined
+
+- pause:
+    prompt: "Enter '{{ username }}'s Password (If you just installed rancher this should be the bootstrapPassword default: admin)"
+  register: prompt_result
+  no_log: true
+  run_once: true
+  when: password is not defined
+  
+- set_fact:
+    password: "{{ prompt_result.user_input }}"
+  when: prompt_result.user_input is defined
+
+- name: Obtain a Rancher API token with Bootstrap Password
+  uri:
+    url: "https://{{ rancher.hostname }}/v3-public/localProviders/local?action=login"
+    method: POST
+    validate_certs: no  # Set this to 'yes' in production after ensuring the certificate is valid.
+    body_format: json
+    headers:
+      Accept: "application/json"
+      ContentType: "application/json"
+    body:
+      username: "admin"
+      password: "{{ password }}"
+      description: "{{ inventory_hostname }}'s API Token for Ansible"
+      ttl: 60
+    status_code: [200, 201]
+    return_content: yes 
+  register: api_response
+
+- name: Set the API token as a fact
+  set_fact:
+    rancher_api_token: "{{ api_response.json.token }}"
+  when:
+    - api_response.json.token is defined

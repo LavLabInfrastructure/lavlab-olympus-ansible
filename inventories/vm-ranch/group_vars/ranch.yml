@@ -1,0 +1,119 @@
+
+rke2_version: v1.26.10+rke2r1
+ranch_domain: "ranch.vm"
+ranch:
+  rancher:
+    version: "2.7.9"
+    cli_version: "v2.7.7"
+    cluster: "vmcluster1"
+    hostname: "test.local"
+    external_cert: 
+      enabled: false
+      # ansible controller host path
+      # ca: ""
+      # cert: ""
+      # key: ""
+    api_token_role: "rancher-local-api-token" 
+    helm_values: {}
+
+  providers:
+    packages:
+      role: "ubuntu"
+      config: {}
+    
+    helm:
+      role: "helm"
+
+    pki: 
+      enabled: true
+      role: "certmanager"
+
+    storage:
+      role: "longhorn"
+      # role: "rook-ceph"
+      # config:
+      #   namespace: "rook-ceph"
+      #   version: "1.12.8"
+      #   helm_values: {}
+      #   cluster_helm_values: {}
+
+    logging:
+      enabled: true
+      role: "rancher-logging" 
+
+    monitoring:
+      enabled: true
+      role: "rancher-monitoring"
+      config:
+        grafana:
+          auth_mode: "anon_admin"
+      
+    postgres:
+      enabled: true
+      role: "cnpg"
+      init_db: "cnpg-db"
+      config:
+        clusters:
+          - "vmcluster1"
+          - "vmcluster2"
+    
+    # idp:
+    #   enabled: false
+    #   role: "keycloak"
+    #   hostname: "keycloak.local"
+    #   config:
+    #     realm:
+    #       name: "VirtualRealm"
+
+  services: 
+    - role: "loki"
+      config:
+        namespace: "loki-system"
+        version: "2.11.11"
+        helm_values: {}
+      # # AWX Operator Config
+      # - role: "awx_operator"
+      #   cluster: "vmcluster1"
+      #   config:
+      #     version: "2.7.0"
+      #     namespace: "awx-system"
+      #     helm_values: {}
+      # AWX Site CRD
+      # awx: 
+      #   enabled: true
+      #   name: "awx"
+      #   # Cloud Native PG Database Config (use bundled postgres if disabled)
+      #   cnpg:
+      #     enabled: true
+      #     name: "keycloak"
+      #     namespace: "{{ keycloak.namespace }}"
+      #     spec: 
+      #       storage: 
+      #         size: "4Gi"
+    
+
+    # # Keycloak Config 
+    # keycloak:
+    #   namespace: "keycloak-system"
+    #   clusters: # multiple clusters can use the same cnpg database
+    #     - "vmcluster1"
+    #   # Cloud Native PG Database Config (use bundled postgres if disabled)
+    #   cnpg:
+    #     enabled: true
+    #     name: "keycloak"
+    #     namespace: "{{ keycloak.namespace }}"
+    #     spec: 
+    #       storage: 
+    #         size: "4Gi" 
+    #   helm_values: 
+    #     postgresql:
+    #       enabled: false
+    #     externalDatabase:
+    #       host: "keycloak-pg-cluster-rw"
+    #       user: "keycloak-pg-user"
+    #       database: "keycloak"
+    #       existingSecret: "keycloak-cnpg-user-secret"
+    #       existingSecretPasswordKey: "password"
+    #   realms:
+    #     - name: "VirtualRealm"
+    

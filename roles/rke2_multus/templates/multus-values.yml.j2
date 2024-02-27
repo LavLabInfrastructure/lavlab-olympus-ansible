@@ -1,0 +1,27 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-multus
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    rke2-whereabouts:
+      enabled: true
+    
+    serviceAccount:
+      create: true
+    
+    config: 
+      cni_conf:
+        multusConfFile: auto
+        cniVersion: 0.3.1
+      manifests:
+        serviceAccount: true
+        clusterRole: true
+        clusterRoleBinding: true
+        configMap: true
+        daemonSet: true
+        customResourceDefinition: true
+
+    
+    

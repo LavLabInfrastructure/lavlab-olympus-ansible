@@ -1,0 +1,6 @@
+ranch_domain: "example.cluster"
+cmd: ""
+certmanager:
+  version: "1.13.2"
+  namespace: "cattle-certificate-system"
+  helm_values: {}

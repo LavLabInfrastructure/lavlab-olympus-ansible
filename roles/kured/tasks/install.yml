@@ -1,0 +1,28 @@
+
+- name: Generate Helm Chart Values From Template
+  become: yes
+  template:
+    src: values.yml.j2
+    dest: /tmp/kured_values.yml
+    mode: 0644
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Add KURED Helm repository
+  kubernetes.core.helm_repository:
+    name: kubereboot
+    repo_url: "https://kubereboot.github.io/charts"
+  when: inventory_hostname == groups[rke2_servers_group_name].0
+
+- name: Install KURED 
+  kubernetes.core.helm:
+    name: kured
+    chart_ref: kubereboot/kured
+    chart_version: "{{ kured.version }}"
+    namespace: "{{ kured.namespace }}"
+    create_namespace: yes
+    update_repo_cache: True
+    wait: yes
+    values_files:
+      - /tmp/kured_values.yml
+    values: "{{ kured.helm_values }}"
+  when: inventory_hostname == groups[rke2_servers_group_name].0

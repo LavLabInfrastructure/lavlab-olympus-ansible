@@ -1,0 +1,4 @@
+nvidia:
+  version: '23.9.1'
+  namespace: 'nvidia-system'
+  helm_values: {}

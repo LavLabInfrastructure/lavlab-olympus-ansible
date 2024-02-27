@@ -1,0 +1,42 @@
+- name: Get Rancher Exemptions
+  include_tasks: append.yml
+  vars:
+    role:
+      name: rancher
+      config: "{{ ranch.rancher }}"
+
+- name: Accumulate exemptions from each provider
+  include_tasks: append.yml
+  vars:
+    role:
+      name: "{{ item.value.role }}"
+      config: "{{ item.value }}"
+  loop: "{{ ranch.providers | dict2items }}"
+
+- name: Accumulate exemptions from each service
+  include_tasks: append.yml
+  vars:
+    role:
+      name: "{{ item.role }}"
+      config: "{{ item }}"
+  loop: "{{ ranch.services }}"
+
+- name: Create RKE2 Configuration Directory
+  become: true
+  file:
+    path: /etc/rancher
+    state: directory
+
+- name: Generate PSA Configuration File
+  become: true
+  template:
+    src: psa.yml.j2
+    dest: /etc/rancher/psa.yaml
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: Enable PSA
+  set_fact:
+    rke2_server_options: "{{ ['pod-security-admission-config-file: /etc/rancher/psa.yaml'] + rke2_server_options | default([]) }}"
+

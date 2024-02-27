@@ -1,0 +1,8 @@
+{% if ranch.providers.monitoring.enabled %}
+monitoring:
+  serviceMonitor: 
+    enabled: true
+{% endif %}
+additionalLoggingSources:
+  rke2:
+    enabled: true

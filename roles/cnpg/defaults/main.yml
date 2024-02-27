@@ -1,0 +1,6 @@
+cnpg:
+  name: "cnpg"
+  namespace: "cnpg-system"
+  version: "0.20.0"
+  clusters: []
+  helm_values: {}

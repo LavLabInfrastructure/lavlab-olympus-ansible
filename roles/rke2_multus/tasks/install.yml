@@ -1,0 +1,27 @@
+- name: Create Path
+  become: yes
+  command: mkdir -p /var/lib/rancher/rke2/server/manifests
+  when: inventory_hostname in groups[rke2_servers_group_name]
+- name: Modify RKE2 Multus
+  become: yes
+  template:
+    src: multus-values.yml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-multus-config.yaml
+    mode: 0644
+  when: inventory_hostname in groups[rke2_servers_group_name]
+
+- name: Add Private IP Pool
+  become: yes
+  template:
+    src: private-ip-pool.yml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-private-ip-pool.yaml
+    mode: 0644
+  when: inventory_hostname in groups[rke2_servers_group_name]
+
+# - name: Add Public IP Pool
+#   become: yes
+#   template:
+#     src: public-ip-pool.yml.j2
+#     dest: /var/lib/rancher/rke2/server/manifests/rke2-public-ip-pool.yaml
+#     mode: 0644
+#   when: inventory_hostname in groups[rke2_servers_group_name]

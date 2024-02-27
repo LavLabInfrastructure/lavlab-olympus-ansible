@@ -1,0 +1,18 @@
+{% if ranch.providers.monitoring.enabled %}
+monitoring: 
+    enabled: true
+{% endif %}
+enableDiscoveryDaemon: true
+csi:
+    enableMetadata: true
+    enableOMAPGenerator: true
+    nfs:
+        enabled: true
+    csiAddons:
+        enabled: false   
+    readAffinity: 
+        enabled: true
+{% if ranch.providers.monitoring.enabled %}
+    serviceMonitor: 
+        enabled: true
+{% endif %}

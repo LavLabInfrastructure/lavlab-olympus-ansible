@@ -1,0 +1,12 @@
+{% if monitoring.grafana.auth_mode == "anon_admin" %}
+grafana:
+    grafana.ini:
+        auth.anonymous:
+            enabled: true
+            org_role: Admin
+{% endif %}
+        
+global:
+    cattle:
+        clusterId: {{ rancher_cluster_id }}
+        clusterName: {{ rancher_cluster_name }}
